@@ -14,9 +14,13 @@ module.exports = async (req, res) => {
     const token = req.query["hub.verify_token"];
     const challenge = req.query["hub.challenge"];
     if (mode === "subscribe" && token === VERIFY_TOKEN) {
-      return res.status(200).send(challenge);
+      res.statusCode = 200;
+      res.end(challenge);
+      return;
     }
-    return res.sendStatus(403);
+    res.statusCode = 403;
+    res.end();
+    return;
   }
   if (req.method === "POST") {
     try {
@@ -25,7 +29,9 @@ module.exports = async (req, res) => {
       // Initial verification
       if (req.query["hub.verify_token"] === VERIFY_TOKEN) {
         console.log("[DEBUG] Verification challenge received");
-        return res.send(req.query["hub.challenge"]);
+        res.statusCode = 200;
+        res.end(req.query["hub.challenge"]);
+        return;
       }
       if (body.object === "instagram") {
         for (const entry of body.entry) {
@@ -50,13 +56,19 @@ module.exports = async (req, res) => {
       } else {
         console.log("[DEBUG] Not an Instagram object:", body.object);
       }
-      return res.status(200).send("EVENT_RECEIVED");
+      res.statusCode = 200;
+      res.end("EVENT_RECEIVED");
+      return;
     } catch (error) {
       console.error("Webhook error:", error);
-      return res.status(500).send("ERROR");
+      res.statusCode = 500;
+      res.end("ERROR");
+      return;
     }
   }
-  return res.status(405).send("Method Not Allowed");
+  res.statusCode = 405;
+  res.end("Method Not Allowed");
+  return;
 };
 
 // Instagram Messaging API: Reply to Instagram DM
