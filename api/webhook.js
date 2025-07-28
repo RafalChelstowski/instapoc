@@ -31,7 +31,7 @@ module.exports = async (req, res) => {
             const senderId = messaging.sender.id;
             const message = messaging.message;
             if (message.attachments && message.attachments[0]?.type === "video") {
-              await sendTextMessage(senderId, "Video received. Thank you!");
+              await sendInstagramTextMessage(senderId, "Video received. Thank you!");
             }
           }
         }
@@ -45,17 +45,20 @@ module.exports = async (req, res) => {
   return res.status(405).send("Method Not Allowed");
 };
 
-// Simplified message sender for quick POC
-async function sendTextMessage(recipientId, text) {
-  const url = `https://graph.facebook.com/v21.0/${PAGE_ID}/messages`;
+// Instagram Messaging API: Reply to Instagram DM
+const IG_BUSINESS_ID = process.env.IG_BUSINESS_ID;
+
+async function sendInstagramTextMessage(recipientId, text) {
+  const url = `https://graph.facebook.com/v19.0/${IG_BUSINESS_ID}/messages`;
   const payload = {
     recipient: { id: recipientId },
+    messaging_type: 'RESPONSE',
     message: { text },
   };
   await axios.post(url, payload, {
     params: { access_token: ACCESS_TOKEN },
   });
-  console.log(`Text message sent to ${recipientId}`);
+  console.log(`IG DM sent to ${recipientId}`);
 }
 
 
