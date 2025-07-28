@@ -21,20 +21,34 @@ module.exports = async (req, res) => {
   if (req.method === "POST") {
     try {
       const body = req.body;
+      console.log("[DEBUG] Incoming POST", JSON.stringify(body, null, 2), req.headers);
       // Initial verification
       if (req.query["hub.verify_token"] === VERIFY_TOKEN) {
+        console.log("[DEBUG] Verification challenge received");
         return res.send(req.query["hub.challenge"]);
       }
       if (body.object === "instagram") {
         for (const entry of body.entry) {
+          console.log('[DEBUG] Entry:', JSON.stringify(entry, null, 2));
           for (const messaging of entry.messaging) {
             const senderId = messaging.sender.id;
             const message = messaging.message;
+            console.log('[DEBUG] Messaging:', JSON.stringify(messaging, null, 2));
             if (message.attachments && message.attachments[0]?.type === "video") {
-              await sendInstagramTextMessage(senderId, "Video received. Thank you!");
+              console.log('[DEBUG] Video message detected from', senderId);
+              try {
+                await sendInstagramTextMessage(senderId, "Video received. Thank you!");
+                console.log('[DEBUG] Reply attempted', senderId);
+              } catch (apiErr) {
+                console.error('[DEBUG] Error sending IG DM:', apiErr.response?.data || apiErr.message);
+              }
+            } else {
+              console.log("[DEBUG] Not a video message");
             }
           }
         }
+      } else {
+        console.log("[DEBUG] Not an Instagram object:", body.object);
       }
       return res.status(200).send("EVENT_RECEIVED");
     } catch (error) {
