@@ -40,16 +40,16 @@ module.exports = async (req, res) => {
             const senderId = messaging.sender.id;
             const message = messaging.message;
             console.log('[DEBUG] Messaging:', JSON.stringify(messaging, null, 2));
-            if (message.attachments && message.attachments[0]?.type === "video") {
-              console.log('[DEBUG] Video message detected from', senderId);
+            if (message.attachments) {
+              console.log('[DEBUG] Attachment message detected from', senderId, message.attachments);
               try {
-                await sendInstagramTextMessage(senderId, "Video received. Thank you!");
+                await sendInstagramTextMessage(senderId, "Media received. Thank you!");
                 console.log('[DEBUG] Reply attempted', senderId);
               } catch (apiErr) {
                 console.error('[DEBUG] Error sending IG DM:', apiErr.response?.data || apiErr.message);
               }
             } else {
-              console.log("[DEBUG] Not a video message");
+              console.log("[DEBUG] Not an attachment message");
             }
           }
         }
