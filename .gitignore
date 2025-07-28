@@ -1,0 +1,7 @@
+.vercel
+node_modules/
+opencode.log
+opencode.lock
+.OpenCode*
+.DS_Store
+.env
