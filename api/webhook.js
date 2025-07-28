@@ -81,11 +81,23 @@ async function sendInstagramTextMessage(recipientId, text) {
     messaging_type: 'RESPONSE',
     message: { text },
   };
-  await axios.post(url, payload, {
-    params: { access_token: ACCESS_TOKEN },
-  });
-  console.log(`IG DM sent to ${recipientId}`);
+  console.log('[DEBUG] Sending IG DM:', JSON.stringify({ url, payload }, null, 2));
+  try {
+    const resp = await axios.post(url, payload, {
+      params: { access_token: ACCESS_TOKEN },
+    });
+    console.log('[DEBUG] IG API response:', resp.data);
+    return resp.data;
+  } catch (err) {
+    if (err.response) {
+      console.error('[DEBUG] IG API error:', err.response.data);
+    } else {
+      console.error('[DEBUG] IG API error:', err.message);
+    }
+    throw err;
+  }
 }
+
 
 
 async function downloadVideo(videoUrl, messageId) {
