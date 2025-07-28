@@ -31,11 +31,7 @@ module.exports = async (req, res) => {
             const senderId = messaging.sender.id;
             const message = messaging.message;
             if (message.attachments && message.attachments[0]?.type === "video") {
-              const videoUrl = message.attachments[0].payload.url;
-              const videoPath = await downloadVideo(videoUrl, message.mid);
-              const processedVideoPath = await processVideo(videoPath, message.mid);
-              const processedVideoUrl = await uploadProcessedVideo(processedVideoPath);
-              await sendVideoMessage(senderId, processedVideoUrl);
+              await sendTextMessage(senderId, "Video received. Thank you!");
             }
           }
         }
@@ -48,6 +44,20 @@ module.exports = async (req, res) => {
   }
   return res.status(405).send("Method Not Allowed");
 };
+
+// Simplified message sender for quick POC
+async function sendTextMessage(recipientId, text) {
+  const url = `https://graph.facebook.com/v21.0/${PAGE_ID}/messages`;
+  const payload = {
+    recipient: { id: recipientId },
+    message: { text },
+  };
+  await axios.post(url, payload, {
+    params: { access_token: ACCESS_TOKEN },
+  });
+  console.log(`Text message sent to ${recipientId}`);
+}
+
 
 async function downloadVideo(videoUrl, messageId) {
   const response = await axios({
