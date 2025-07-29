@@ -75,7 +75,7 @@ module.exports = async (req, res) => {
 const IG_BUSINESS_ID = process.env.IG_BUSINESS_ID;
 
 async function sendInstagramTextMessage(recipientId, text) {
-  const url = `https://graph.facebook.com/v19.0/${IG_BUSINESS_ID}/messages`;
+  const url = `https://graph.instagram.com/v21.0/${IG_BUSINESS_ID}/messages`;
   const payload = {
     recipient: { id: recipientId },
     messaging_type: 'RESPONSE',
