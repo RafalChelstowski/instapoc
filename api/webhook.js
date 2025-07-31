@@ -1,6 +1,7 @@
 const axios = require("axios");
 const formidable = require("formidable");
 const fs = require("fs");
+const FormData = require("form-data");
 
 const ACCESS_TOKEN = process.env.ACCESS_TOKEN;
 const VERIFY_TOKEN = process.env.VERIFY_TOKEN;
@@ -161,7 +162,7 @@ module.exports = async (req, res) => {
   res.end("Method Not Allowed");
 };
 
-// Upload video to Instagram media endpoint
+// Upload video to Instagram media endpoint using form-data package
 async function uploadVideoToInstagram(recipientId, filePath, filename) {
   const url = `https://graph.facebook.com/v21.0/${IG_BUSINESS_ID}/media`;
   const form = new FormData();
