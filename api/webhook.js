@@ -139,7 +139,7 @@ module.exports = async (req, res) => {
 
 // Send video message with a public URL
 async function sendInstagramVideoMessageWithUrl(recipientId, videoUrl) {
-  const url = `https://graph.facebook.com/v23.0/${IG_BUSINESS_ID}/messages`;
+  const url = `https://graph.instagram.com/v21.0/${IG_BUSINESS_ID}/messages`;
   const payload = {
     recipient: { id: recipientId },
     messaging_type: "RESPONSE",
@@ -153,10 +153,7 @@ async function sendInstagramVideoMessageWithUrl(recipientId, videoUrl) {
     },
   };
   const resp = await axios.post(url, payload, {
-    headers: {
-      Authorization: `Bearer ${ACCESS_TOKEN}`,
-      "Content-Type": "application/json",
-    },
+    params: { access_token: ACCESS_TOKEN },
   });
   return resp.data;
 }
