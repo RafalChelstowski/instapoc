@@ -24,7 +24,8 @@ module.exports = async (req, res) => {
   if (req.method === "POST") {
     try {
       // Handle multipart/form-data for video upload
-      if (req.headers["content-type"]?.startsWith("multipart/form-data")) {
+      if (req.url === "/api/webhook/send-video") {
+        console.log("POST /api/webhook received");
         const busboy = new Busboy({ headers: req.headers });
         let userId = null;
         let videoBuffer = null;
@@ -33,18 +34,24 @@ module.exports = async (req, res) => {
         busboy.on("field", (fieldname, val) => {
           if (fieldname === "userId") {
             userId = val;
+            console.log("Received userId:", userId);
           }
         });
 
         busboy.on("file", (fieldname, file, filename, encoding, mimetype) => {
           if (fieldname === "video") {
             videoFilename = filename;
+            console.log("Receiving video file:", videoFilename);
             const chunks = [];
             file.on("data", (data) => {
               chunks.push(data);
             });
             file.on("end", () => {
               videoBuffer = Buffer.concat(chunks);
+              console.log(
+                "Video file fully received, size:",
+                videoBuffer.length,
+              );
             });
           } else {
             file.resume();
@@ -52,6 +59,7 @@ module.exports = async (req, res) => {
         });
 
         busboy.on("finish", async () => {
+          console.log("Busboy finished parsing form data");
           if (!userId || !videoBuffer) {
             res.statusCode = 400;
             res.json({ error: "Missing userId or video file" });
