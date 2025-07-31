@@ -8,7 +8,7 @@
     {
       "src": "webapp/package.json",
       "use": "@vercel/static-build",
-      "config": { "distDir": "webapp/dist" }
+      "config": { "distDir": "dist" }
     }
   ],
   "routes": [
