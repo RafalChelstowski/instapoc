@@ -27,6 +27,7 @@ module.exports = async (req, res) => {
     const response = await axios.post(url, payload, {
       params: { access_token: ACCESS_TOKEN },
     });
+    console.log("Instagram API response:", response.data);
 
     res.status(200).json({ success: true, data: response.data });
   } catch (error) {
