@@ -6,8 +6,7 @@ const ACCESS_TOKEN = process.env.ACCESS_TOKEN;
 const VERIFY_TOKEN = process.env.VERIFY_TOKEN;
 const IG_BUSINESS_ID = process.env.IG_BUSINESS_ID;
 
-const TEST_VIDEO_URL =
-  "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4";
+const TEST_VIDEO_URL = "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4";
 
 module.exports = async (req, res) => {
   if (req.method === "GET") {
@@ -38,7 +37,12 @@ module.exports = async (req, res) => {
             return;
           }
 
-          const userId = fields.userId;
+          // Normalize userId to string if it's an array
+          let userId = fields.userId;
+          if (Array.isArray(userId)) {
+            userId = userId[0];
+          }
+
           if (!userId) {
             res.statusCode = 400;
             res.json({ error: "Missing userId" });
@@ -74,7 +78,13 @@ module.exports = async (req, res) => {
         req.url === "/api/webhook/send-message" ||
         (body.userId && body.message)
       ) {
-        const { userId, message } = body;
+        // Normalize userId to string if it's an array
+        let userId = body.userId;
+        if (Array.isArray(userId)) {
+          userId = userId[0];
+        }
+
+        const { message } = body;
         if (!userId || !message) {
           res.statusCode = 400;
           res.json({ error: "Missing userId or message" });
