@@ -121,34 +121,19 @@ function App() {
           <p>{status}</p>
 
           <div>
-            {!cameraStarted ? (
-              <button onClick={startCamera}>Start Camera</button>
-            ) : (
-              <>
-                {recording ? (
-                  <video
-                    ref={videoRef}
-                    autoPlay
-                    muted
-                    style={{ width: "320px", height: "240px", border: "1px solid black" }}
-                  ></video>
-                ) : videoURL ? (
-                  <video
-                    key={videoURL}
-                    src={videoURL}
-                    controls
-                    style={{ width: "320px", height: "240px", border: "1px solid black" }}
-                  ></video>
-                ) : (
-                  <video
-                    ref={videoRef}
-                    autoPlay
-                    muted
-                    style={{ width: "320px", height: "240px", border: "1px solid black" }}
-                  ></video>
-                )}
-              </>
-            )}
+            {!cameraStarted && <button onClick={startCamera}>Start Camera</button>}
+            <>
+              {!videoURL && (<div>
+                <video ref={videoRef} autoPlay muted style={{ width: "320px", height: "240px", border: "1px solid black" }}></video>
+              </div>)}
+              {videoURL && (<div>
+                <video
+                  src={videoURL}
+                  controls
+                  style={{ width: "320px", height: "240px", border: "1px solid black" }}
+                ></video>
+              </div>)}
+            </>
           </div>
 
           <div>
