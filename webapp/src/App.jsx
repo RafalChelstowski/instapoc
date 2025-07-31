@@ -12,28 +12,32 @@ function App() {
   const [userId, setUserId] = useState(null);
   const [status, setStatus] = useState("");
 
-  useEffect(() => {
-    // Request webcam access
-    async function getWebcam() {
-      try {
-        const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
-        setStream(mediaStream);
-        if (videoRef.current) {
-          videoRef.current.srcObject = mediaStream;
-        }
-      } catch (err) {
-        console.error("Error accessing webcam:", err);
-      }
-    }
-    getWebcam();
+  // New state to track if camera is started
+  const [cameraStarted, setCameraStarted] = useState(false);
 
+  // Function to start webcam on user action
+  const startCamera = async () => {
+    try {
+      const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
+      setStream(mediaStream);
+      if (videoRef.current) {
+        videoRef.current.srcObject = mediaStream;
+      }
+      setCameraStarted(true);
+    } catch (err) {
+      console.error("Error accessing webcam:", err);
+      setStatus("Error accessing webcam");
+    }
+  };
+
+  useEffect(() => {
+    // Cleanup: stop all tracks when component unmounts or stream changes
     return () => {
-      // Cleanup: stop all tracks
       if (stream) {
         stream.getTracks().forEach(track => track.stop());
       }
     };
-  }, []);
+  }, [stream]);
 
   const startRecording = () => {
     if (!stream) return;
@@ -97,29 +101,6 @@ function App() {
   };
 
   useEffect(() => {
-    // Request webcam access
-    async function getWebcam() {
-      try {
-        const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
-        setStream(mediaStream);
-        if (videoRef.current) {
-          videoRef.current.srcObject = mediaStream;
-        }
-      } catch (err) {
-        console.error("Error accessing webcam:", err);
-      }
-    }
-    getWebcam();
-
-    return () => {
-      // Cleanup: stop all tracks
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
-      }
-    };
-  }, []);
-
-  useEffect(() => {
     // Parse userId from URL query params
     const params = new URLSearchParams(window.location.search);
     const id = params.get("userId");
@@ -140,12 +121,23 @@ function App() {
           <p>{status}</p>
 
           <div>
-            <video ref={videoRef} autoPlay muted style={{ width: "320px", height: "240px", border: "1px solid black" }}></video>
+            {!cameraStarted ? (
+              <button onClick={startCamera}>Start Camera</button>
+            ) : (
+              <video
+                ref={videoRef}
+                autoPlay
+                muted
+                style={{ width: "320px", height: "240px", border: "1px solid black" }}
+              ></video>
+            )}
           </div>
 
           <div>
             {!recording ? (
-              <button onClick={startRecording}>Start Recording</button>
+              <button onClick={startRecording} disabled={!cameraStarted}>
+                Start Recording
+              </button>
             ) : (
               <button onClick={stopRecording}>Stop Recording</button>
             )}
@@ -154,7 +146,11 @@ function App() {
           {videoURL && (
             <div>
               <h3>Recorded Video:</h3>
-              <video src={videoURL} controls style={{ width: "320px", height: "240px", border: "1px solid black" }}></video>
+              <video
+                src={videoURL}
+                controls
+                style={{ width: "320px", height: "240px", border: "1px solid black" }}
+              ></video>
             </div>
           )}
         </>
@@ -165,4 +161,4 @@ function App() {
   );
 }
 
-export default App
+export default App;

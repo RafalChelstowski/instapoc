@@ -1,11 +1,13 @@
 const axios = require("axios");
 const formidable = require("formidable");
 const fs = require("fs");
-const FormData = require("form-data");
 
 const ACCESS_TOKEN = process.env.ACCESS_TOKEN;
 const VERIFY_TOKEN = process.env.VERIFY_TOKEN;
 const IG_BUSINESS_ID = process.env.IG_BUSINESS_ID;
+
+const TEST_VIDEO_URL =
+  "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4";
 
 module.exports = async (req, res) => {
   if (req.method === "GET") {
@@ -43,41 +45,14 @@ module.exports = async (req, res) => {
             return;
           }
 
-          let videoFile = files.video;
-          console.log("Type of files.video:", typeof videoFile);
-          console.log("Is files.video an array?", Array.isArray(videoFile));
-          console.log("Video file object:", videoFile);
-
-          // If files.video is an array, use the first file object
-          if (Array.isArray(videoFile)) {
-            videoFile = videoFile[0];
-            console.log("Using first video file from array:", videoFile);
-          }
-
-          if (!videoFile) {
-            res.statusCode = 400;
-            res.json({ error: "Missing video file" });
-            return;
-          }
-
+          // For testing, ignore uploaded video and use fixed public URL
           try {
-            const filePath =
-              videoFile.filepath || videoFile.filePath || videoFile.path;
-            if (!filePath) {
-              throw new Error("Video file path is missing");
-            }
-
-            const mediaId = await uploadVideoToInstagram(
-              userId,
-              filePath,
-              videoFile.originalFilename || "video.webm",
-            );
-            await sendInstagramVideoMessage(userId, mediaId);
+            await sendInstagramVideoMessageWithUrl(userId, TEST_VIDEO_URL);
 
             res.statusCode = 200;
-            res.json({ success: true });
-          } catch (uploadErr) {
-            console.error("Error sending video message:", uploadErr);
+            res.json({ success: true, videoUrl: TEST_VIDEO_URL });
+          } catch (sendErr) {
+            console.error("Error sending video message:", sendErr);
             res.statusCode = 500;
             res.json({ error: "Failed to send video message" });
           }
@@ -162,30 +137,9 @@ module.exports = async (req, res) => {
   res.end("Method Not Allowed");
 };
 
-// Upload video to Instagram media endpoint using form-data package
-async function uploadVideoToInstagram(recipientId, filePath, filename) {
-  const url = `https://graph.facebook.com/v21.0/${IG_BUSINESS_ID}/media`;
-  const form = new FormData();
-  form.append("recipient", JSON.stringify({ id: recipientId }));
-  form.append("media_type", "VIDEO");
-  form.append("video_file", fs.createReadStream(filePath), {
-    filename,
-    contentType: "video/webm",
-  });
-  form.append("access_token", ACCESS_TOKEN);
-
-  const headers = form.getHeaders();
-
-  const response = await axios.post(url, form, { headers });
-  if (!response.data.id) {
-    throw new Error("Failed to upload video media");
-  }
-  return response.data.id;
-}
-
-// Send video message with media ID
-async function sendInstagramVideoMessage(recipientId, mediaId) {
-  const url = `https://graph.facebook.com/v21.0/${IG_BUSINESS_ID}/messages`;
+// Send video message with a public URL
+async function sendInstagramVideoMessageWithUrl(recipientId, videoUrl) {
+  const url = `https://graph.facebook.com/v23.0/${IG_BUSINESS_ID}/messages`;
   const payload = {
     recipient: { id: recipientId },
     messaging_type: "RESPONSE",
@@ -193,13 +147,16 @@ async function sendInstagramVideoMessage(recipientId, mediaId) {
       attachment: {
         type: "video",
         payload: {
-          id: mediaId,
+          url: videoUrl,
         },
       },
     },
   };
   const resp = await axios.post(url, payload, {
-    params: { access_token: ACCESS_TOKEN },
+    headers: {
+      Authorization: `Bearer ${ACCESS_TOKEN}`,
+      "Content-Type": "application/json",
+    },
   });
   return resp.data;
 }
