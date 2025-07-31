@@ -70,11 +70,14 @@ module.exports = async (req, res) => {
               "[DEBUG] Messaging:",
               JSON.stringify(messaging, null, 2),
             );
-            if (message.attachments) {
+            if (
+              (message.attachments && message.attachments.length > 0) ||
+              (message.text && message.text.toLowerCase().includes("video"))
+            ) {
               console.log(
-                "[DEBUG] Attachment message detected from",
+                "[DEBUG] Attachment or 'video' keyword detected from",
                 senderId,
-                message.attachments,
+                message.attachments || message.text,
               );
               const webappUrl = `https://instapoc-lyart.vercel.app?userId=${senderId}`;
               try {
@@ -93,7 +96,7 @@ module.exports = async (req, res) => {
                 );
               }
             } else {
-              console.log("[DEBUG] Not an attachment message");
+              console.log("[DEBUG] Message does not contain attachment or 'video' keyword");
             }
           }
         }
