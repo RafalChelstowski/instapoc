@@ -65,12 +65,10 @@ module.exports = async (req, res) => {
             if (!filePath) {
               throw new Error("Video file path is missing");
             }
-            const videoBuffer = fs.readFileSync(filePath);
-            console.log("Video file read, size:", videoBuffer.length);
 
             const mediaId = await uploadVideoToInstagram(
               userId,
-              videoBuffer,
+              filePath,
               videoFile.originalFilename || "video.webm",
             );
             await sendInstagramVideoMessage(userId, mediaId);
@@ -164,12 +162,12 @@ module.exports = async (req, res) => {
 };
 
 // Upload video to Instagram media endpoint
-async function uploadVideoToInstagram(recipientId, videoBuffer, filename) {
+async function uploadVideoToInstagram(recipientId, filePath, filename) {
   const url = `https://graph.facebook.com/v21.0/${IG_BUSINESS_ID}/media`;
   const form = new FormData();
   form.append("recipient", JSON.stringify({ id: recipientId }));
   form.append("media_type", "VIDEO");
-  form.append("video_file", videoBuffer, {
+  form.append("video_file", fs.createReadStream(filePath), {
     filename,
     contentType: "video/webm",
   });
