@@ -1,0 +1,24 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "api/webhook.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "webapp/package.json",
+      "use": "@vercel/static-build",
+      "config": { "distDir": "webapp/dist" }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/webhook.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/webapp/$1"
+    }
+  ]
+}
