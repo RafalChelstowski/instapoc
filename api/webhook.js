@@ -50,8 +50,13 @@ module.exports = async (req, res) => {
           }
 
           try {
-            // Read video file into buffer
-            const videoBuffer = fs.readFileSync(videoFile.filepath);
+            console.log("Video file object:", videoFile);
+            const filePath =
+              videoFile.filepath || videoFile.filePath || videoFile.path;
+            if (!filePath) {
+              throw new Error("Video file path is missing");
+            }
+            const videoBuffer = fs.readFileSync(filePath);
             console.log("Video file read, size:", videoBuffer.length);
 
             const mediaId = await uploadVideoToInstagram(
