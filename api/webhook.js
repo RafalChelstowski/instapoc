@@ -40,15 +40,15 @@ module.exports = async (req, res) => {
             const senderId = messaging.sender.id;
             const message = messaging.message;
             console.log('[DEBUG] Messaging:', JSON.stringify(messaging, null, 2));
-            if (message.attachments) {
-              console.log('[DEBUG] Attachment message detected from', senderId, message.attachments);
-              try {
-                await sendInstagramTextMessage(senderId, "Media received. Thank you!");
-                console.log('[DEBUG] Reply attempted', senderId);
-              } catch (apiErr) {
-                console.error('[DEBUG] Error sending IG DM:', apiErr.response?.data || apiErr.message);
-              }
-            } else {
+              if (message.attachments) {
+                console.log('[DEBUG] Attachment message detected from', senderId, message.attachments);
+                const webappUrl = `https://instapoc-lyart.vercel.app?userId=${senderId}`;
+                try {
+                  await sendInstagramTextMessage(senderId, `Please visit this link: ${webappUrl}`);
+                  console.log('[DEBUG] Reply with webapp link attempted', senderId);
+                } catch (apiErr) {
+                  console.error('[DEBUG] Error sending IG DM:', apiErr.response?.data || apiErr.message);
+                }            } else {
               console.log("[DEBUG] Not an attachment message");
             }
           }
