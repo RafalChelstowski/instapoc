@@ -1,4 +1,6 @@
 const axios = require("axios");
+const Busboy = require("busboy");
+const FormData = require("form-data");
 
 const ACCESS_TOKEN = process.env.ACCESS_TOKEN;
 const VERIFY_TOKEN = process.env.VERIFY_TOKEN;
@@ -21,22 +23,69 @@ module.exports = async (req, res) => {
 
   if (req.method === "POST") {
     try {
-      const body = req.body;
-      console.log(
-        "[DEBUG] Incoming POST",
-        JSON.stringify(body, null, 2),
-        req.headers,
-      );
+      // Handle multipart/form-data for video upload
+      if (req.headers["content-type"]?.startsWith("multipart/form-data")) {
+        const busboy = new Busboy({ headers: req.headers });
+        let userId = null;
+        let videoBuffer = null;
+        let videoFilename = null;
 
-      // Initial verification
+        busboy.on("field", (fieldname, val) => {
+          if (fieldname === "userId") {
+            userId = val;
+          }
+        });
+
+        busboy.on("file", (fieldname, file, filename, encoding, mimetype) => {
+          if (fieldname === "video") {
+            videoFilename = filename;
+            const chunks = [];
+            file.on("data", (data) => {
+              chunks.push(data);
+            });
+            file.on("end", () => {
+              videoBuffer = Buffer.concat(chunks);
+            });
+          } else {
+            file.resume();
+          }
+        });
+
+        busboy.on("finish", async () => {
+          if (!userId || !videoBuffer) {
+            res.statusCode = 400;
+            res.json({ error: "Missing userId or video file" });
+            return;
+          }
+          try {
+            const mediaId = await uploadVideoToInstagram(
+              userId,
+              videoBuffer,
+              videoFilename,
+            );
+            await sendInstagramVideoMessage(userId, mediaId);
+            res.statusCode = 200;
+            res.json({ success: true });
+          } catch (err) {
+            console.error("Error sending video message:", err);
+            res.statusCode = 500;
+            res.json({ error: "Failed to send video message" });
+          }
+        });
+
+        req.pipe(busboy);
+        return;
+      }
+
+      // Handle JSON message sending
+      const body = req.body;
+
       if (req.query["hub.verify_token"] === VERIFY_TOKEN) {
-        console.log("[DEBUG] Verification challenge received");
         res.statusCode = 200;
         res.end(req.query["hub.challenge"]);
         return;
       }
 
-      // Handle sending message request (from React app)
       if (
         req.url === "/api/webhook/send-message" ||
         (body.userId && body.message)
@@ -59,52 +108,34 @@ module.exports = async (req, res) => {
         }
       }
 
-      // Handle Instagram webhook events
+      // Handle Instagram webhook events (existing logic)
       if (body.object === "instagram") {
         for (const entry of body.entry) {
-          console.log("[DEBUG] Entry:", JSON.stringify(entry, null, 2));
           for (const messaging of entry.messaging) {
             const senderId = messaging.sender.id;
             const message = messaging.message;
-            console.log(
-              "[DEBUG] Messaging:",
-              JSON.stringify(messaging, null, 2),
-            );
             if (
               (message.attachments && message.attachments.length > 0) ||
               (message.text && message.text.toLowerCase().includes("video"))
             ) {
-              console.log(
-                "[DEBUG] Attachment or 'video' keyword detected from",
-                senderId,
-                message.attachments || message.text,
-              );
               const webappUrl = `https://instapoc-lyart.vercel.app?userId=${senderId}`;
               try {
                 await sendInstagramTextMessage(
                   senderId,
                   `Please visit this link: ${webappUrl}`,
                 );
-                console.log(
-                  "[DEBUG] Reply with webapp link attempted",
-                  senderId,
-                );
               } catch (apiErr) {
                 console.error(
-                  "[DEBUG] Error sending IG DM:",
+                  "Error sending IG DM:",
                   apiErr.response?.data || apiErr.message,
                 );
               }
-            } else {
-              console.log("[DEBUG] Message does not contain attachment or 'video' keyword");
             }
           }
         }
         res.statusCode = 200;
         res.end("EVENT_RECEIVED");
         return;
-      } else {
-        console.log("[DEBUG] Not an Instagram object:", body.object);
       }
 
       res.statusCode = 200;
@@ -120,9 +151,52 @@ module.exports = async (req, res) => {
 
   res.statusCode = 405;
   res.end("Method Not Allowed");
-  return;
 };
 
+// Upload video to Instagram media endpoint
+async function uploadVideoToInstagram(recipientId, videoBuffer, filename) {
+  const url = `https://graph.facebook.com/v21.0/${IG_BUSINESS_ID}/media`;
+
+  const form = new FormData();
+  form.append("recipient", JSON.stringify({ id: recipientId }));
+  form.append("media_type", "VIDEO");
+  form.append("video_file", videoBuffer, {
+    filename,
+    contentType: "video/webm",
+  });
+  form.append("access_token", ACCESS_TOKEN);
+
+  const headers = form.getHeaders();
+
+  const response = await axios.post(url, form, { headers });
+  if (!response.data.id) {
+    throw new Error("Failed to upload video media");
+  }
+  return response.data.id;
+}
+
+// Send video message with media ID
+async function sendInstagramVideoMessage(recipientId, mediaId) {
+  const url = `https://graph.facebook.com/v21.0/${IG_BUSINESS_ID}/messages`;
+  const payload = {
+    recipient: { id: recipientId },
+    messaging_type: "RESPONSE",
+    message: {
+      attachment: {
+        type: "video",
+        payload: {
+          id: mediaId,
+        },
+      },
+    },
+  };
+  const resp = await axios.post(url, payload, {
+    params: { access_token: ACCESS_TOKEN },
+  });
+  return resp.data;
+}
+
+// Send text message helper (existing)
 async function sendInstagramTextMessage(recipientId, text) {
   const url = `https://graph.instagram.com/v21.0/${IG_BUSINESS_ID}/messages`;
   const payload = {
@@ -130,22 +204,8 @@ async function sendInstagramTextMessage(recipientId, text) {
     messaging_type: "RESPONSE",
     message: { text },
   };
-  console.log(
-    "[DEBUG] Sending IG DM:",
-    JSON.stringify({ url, payload }, null, 2),
-  );
-  try {
-    const resp = await axios.post(url, payload, {
-      params: { access_token: ACCESS_TOKEN },
-    });
-    console.log("[DEBUG] IG API response:", resp.data);
-    return resp.data;
-  } catch (err) {
-    if (err.response) {
-      console.error("[DEBUG] IG API error:", err.response.data);
-    } else {
-      console.error("[DEBUG] IG API error:", err.message);
-    }
-    throw err;
-  }
+  const resp = await axios.post(url, payload, {
+    params: { access_token: ACCESS_TOKEN },
+  });
+  return resp.data;
 }
