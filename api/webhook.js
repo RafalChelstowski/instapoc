@@ -42,7 +42,17 @@ module.exports = async (req, res) => {
             return;
           }
 
-          const videoFile = files.video;
+          let videoFile = files.video;
+          console.log("Type of files.video:", typeof videoFile);
+          console.log("Is files.video an array?", Array.isArray(videoFile));
+          console.log("Video file object:", videoFile);
+
+          // If files.video is an array, use the first file object
+          if (Array.isArray(videoFile)) {
+            videoFile = videoFile[0];
+            console.log("Using first video file from array:", videoFile);
+          }
+
           if (!videoFile) {
             res.statusCode = 400;
             res.json({ error: "Missing video file" });
@@ -50,7 +60,6 @@ module.exports = async (req, res) => {
           }
 
           try {
-            console.log("Video file object:", videoFile);
             const filePath =
               videoFile.filepath || videoFile.filePath || videoFile.path;
             if (!filePath) {
@@ -157,7 +166,6 @@ module.exports = async (req, res) => {
 // Upload video to Instagram media endpoint
 async function uploadVideoToInstagram(recipientId, videoBuffer, filename) {
   const url = `https://graph.facebook.com/v21.0/${IG_BUSINESS_ID}/media`;
-
   const form = new FormData();
   form.append("recipient", JSON.stringify({ id: recipientId }));
   form.append("media_type", "VIDEO");
