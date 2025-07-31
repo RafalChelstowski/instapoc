@@ -124,12 +124,30 @@ function App() {
             {!cameraStarted ? (
               <button onClick={startCamera}>Start Camera</button>
             ) : (
-              <video
-                ref={videoRef}
-                autoPlay
-                muted
-                style={{ width: "320px", height: "240px", border: "1px solid black" }}
-              ></video>
+              <>
+                {recording ? (
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    muted
+                    style={{ width: "320px", height: "240px", border: "1px solid black" }}
+                  ></video>
+                ) : videoURL ? (
+                  <video
+                    key={videoURL}
+                    src={videoURL}
+                    controls
+                    style={{ width: "320px", height: "240px", border: "1px solid black" }}
+                  ></video>
+                ) : (
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    muted
+                    style={{ width: "320px", height: "240px", border: "1px solid black" }}
+                  ></video>
+                )}
+              </>
             )}
           </div>
 
@@ -142,17 +160,6 @@ function App() {
               <button onClick={stopRecording}>Stop Recording</button>
             )}
           </div>
-
-          {videoURL && (
-            <div>
-              <h3>Recorded Video:</h3>
-              <video
-                src={videoURL}
-                controls
-                style={{ width: "320px", height: "240px", border: "1px solid black" }}
-              ></video>
-            </div>
-          )}
         </>
       ) : (
         <p>No user ID found in URL</p>
