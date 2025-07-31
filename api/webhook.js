@@ -1,5 +1,5 @@
 const axios = require("axios");
-const Busboy = require("busboy");
+const Busboy = require("busboy").default || require("busboy");
 const FormData = require("form-data");
 
 const ACCESS_TOKEN = process.env.ACCESS_TOKEN;
