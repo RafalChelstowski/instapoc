@@ -1,6 +1,6 @@
 const axios = require("axios");
-const Busboy = require("busboy").default || require("busboy");
-const FormData = require("form-data");
+const formidable = require("formidable");
+const fs = require("fs");
 
 const ACCESS_TOKEN = process.env.ACCESS_TOKEN;
 const VERIFY_TOKEN = process.env.VERIFY_TOKEN;
@@ -23,65 +23,53 @@ module.exports = async (req, res) => {
 
   if (req.method === "POST") {
     try {
-      // Handle multipart/form-data for video upload
       if (req.url === "/api/webhook/send-video") {
-        console.log("POST /api/webhook received");
-        const busboy = new Busboy({ headers: req.headers });
-        let userId = null;
-        let videoBuffer = null;
-        let videoFilename = null;
+        console.log("POST /api/webhook/send-video received");
 
-        busboy.on("field", (fieldname, val) => {
-          if (fieldname === "userId") {
-            userId = val;
-            console.log("Received userId:", userId);
-          }
-        });
-
-        busboy.on("file", (fieldname, file, filename, encoding, mimetype) => {
-          if (fieldname === "video") {
-            videoFilename = filename;
-            console.log("Receiving video file:", videoFilename);
-            const chunks = [];
-            file.on("data", (data) => {
-              chunks.push(data);
-            });
-            file.on("end", () => {
-              videoBuffer = Buffer.concat(chunks);
-              console.log(
-                "Video file fully received, size:",
-                videoBuffer.length,
-              );
-            });
-          } else {
-            file.resume();
-          }
-        });
-
-        busboy.on("finish", async () => {
-          console.log("Busboy finished parsing form data");
-          if (!userId || !videoBuffer) {
-            res.statusCode = 400;
-            res.json({ error: "Missing userId or video file" });
+        const form = new formidable.IncomingForm();
+        form.parse(req, async (err, fields, files) => {
+          if (err) {
+            console.error("Formidable parse error:", err);
+            res.statusCode = 500;
+            res.json({ error: "Failed to parse form data" });
             return;
           }
+
+          const userId = fields.userId;
+          if (!userId) {
+            res.statusCode = 400;
+            res.json({ error: "Missing userId" });
+            return;
+          }
+
+          const videoFile = files.video;
+          if (!videoFile) {
+            res.statusCode = 400;
+            res.json({ error: "Missing video file" });
+            return;
+          }
+
           try {
+            // Read video file into buffer
+            const videoBuffer = fs.readFileSync(videoFile.filepath);
+            console.log("Video file read, size:", videoBuffer.length);
+
             const mediaId = await uploadVideoToInstagram(
               userId,
               videoBuffer,
-              videoFilename,
+              videoFile.originalFilename || "video.webm",
             );
             await sendInstagramVideoMessage(userId, mediaId);
+
             res.statusCode = 200;
             res.json({ success: true });
-          } catch (err) {
-            console.error("Error sending video message:", err);
+          } catch (uploadErr) {
+            console.error("Error sending video message:", uploadErr);
             res.statusCode = 500;
             res.json({ error: "Failed to send video message" });
           }
         });
 
-        req.pipe(busboy);
         return;
       }
 
