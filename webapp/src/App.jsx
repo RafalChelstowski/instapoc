@@ -80,7 +80,7 @@ function App() {
       formData.append("userId", userId);
       formData.append("video", videoBlob, "video.webm");
 
-      const response = await fetch("/api/send-message", {
+      const response = await fetch("/api/webhook", {
         method: "POST",
         body: formData,
       });
