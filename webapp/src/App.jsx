@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import './App.css'
+import "./App.css";
 
 function App() {
   const videoRef = useRef(null);
@@ -8,17 +8,16 @@ function App() {
   const [videoURL, setVideoURL] = useState(null);
   const [videoBlob, setVideoBlob] = useState(null);
   const [stream, setStream] = useState(null);
-
   const [userId, setUserId] = useState(null);
   const [status, setStatus] = useState("");
-
-  // New state to track if camera is started
   const [cameraStarted, setCameraStarted] = useState(false);
 
   // Function to start webcam on user action
   const startCamera = async () => {
     try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
+      const mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+      });
       setStream(mediaStream);
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
@@ -34,14 +33,14 @@ function App() {
     // Cleanup: stop all tracks when component unmounts or stream changes
     return () => {
       if (stream) {
-        stream.getTracks().forEach(track => track.stop());
+        stream.getTracks().forEach((track) => track.stop());
       }
     };
   }, [stream]);
 
   const startRecording = () => {
     if (!stream) return;
-    const options = { mimeType: 'video/webm' };
+    const options = { mimeType: "video/webm" };
     const mediaRecorder = new MediaRecorder(stream, options);
     mediaRecorderRef.current = mediaRecorder;
     const chunks = [];
@@ -53,7 +52,7 @@ function App() {
     };
 
     mediaRecorder.onstop = () => {
-      const blob = new Blob(chunks, { type: 'video/webm' });
+      const blob = new Blob(chunks, { type: "video/webm" });
       const url = URL.createObjectURL(blob);
       setVideoURL(url);
       setVideoBlob(blob);
@@ -121,18 +120,41 @@ function App() {
           <p>{status}</p>
 
           <div>
-            {!cameraStarted && <button onClick={startCamera}>Start Camera</button>}
+            {!cameraStarted && (
+              <button onClick={startCamera}>Start Camera</button>
+            )}
             <>
-              {!videoURL && (<div>
-                <video ref={videoRef} autoPlay muted style={{ width: "320px", height: "240px", border: "1px solid black" }}></video>
-              </div>)}
-              {videoURL && (<div>
-                <video
-                  src={videoURL}
-                  controls
-                  style={{ width: "320px", height: "240px", border: "1px solid black" }}
-                ></video>
-              </div>)}
+              {!videoURL && (
+                <div>
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    style={{
+                      width: "320px",
+                      height: "240px",
+                      border: "1px solid black",
+                      transform: "scaleX(-1)",
+                    }}
+                  ></video>
+                </div>
+              )}
+              {videoURL && (
+                <div>
+                  <video
+                    playsInline
+                    src={videoURL}
+                    controls
+                    style={{
+                      width: "320px",
+                      height: "240px",
+                      border: "1px solid black",
+                      transform: "scaleX(-1)",
+                    }}
+                  ></video>
+                </div>
+              )}
             </>
           </div>
 
