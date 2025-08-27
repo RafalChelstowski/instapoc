@@ -10,13 +10,15 @@
 - Added new dependencies: `busboy` and `form-data`.
 - Environment variables required: `ACCESS_TOKEN`, `VERIFY_TOKEN`, `IG_BUSINESS_ID`.
 
-## Next Steps
+## Share Button Implementation Plan
 
-- Test the full video message sending flow end-to-end.
-- Handle edge cases and errors in video upload and messaging.
-- Improve UI feedback for video upload and message sending status.
-- Consider adding video recording time limits and file size checks.
+- **OAuth Flow**: Add Instagram OAuth to obtain `access_token` with `instagram_basic` and `pages_show_list` scopes.
+- **Video Upload API**: Create a new backend endpoint (`POST /api/instagram/upload`) that accepts video URL or file, calls Graph API to create & publish media, returns shortcode/permalink.
+- **Frontend Button Component**: In React, add a “Share to Instagram” button that triggers the upload flow and then opens `https://www.instagram.com/p/<shortcode>/` in a new tab or via native share dialog on mobile.
+- **State Management & UX**: Show loading indicator while uploading; handle errors gracefully; confirm success with a toast.
+- **Permissions Check**: Ensure user is authenticated; if not, redirect to login page before sharing.
+- **Testing**: Write unit tests for the upload API and integration test for button click flow.
 
----
+This plan will enable users to share their video content directly from the webapp with one click.
 
-This update reflects the current state of the project as of July 31, 2025.
+This update reflects the current state of the project as of August 5, 2025.
