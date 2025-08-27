@@ -69,41 +69,42 @@ function App() {
     }
   };
 
-const sendVideoMessage = async () => {
-     if (!userId) {
-       setStatus("User ID not found");
-       return;
-     }
-     if (!videoBlob) {
-       setStatus("No video recorded");
-       return;
-     }
-     try {
-       const formData = new FormData();
-       formData.append("userId", userId);
-       formData.append("video", videoBlob, "video.webm");
+  const sendVideoMessage = async () => {
+    if (!userId) {
+      setStatus("User ID not found");
+      return;
+    }
+    if (!videoBlob) {
+      setStatus("No video recorded");
+      return;
+    }
+    try {
+      setStatus("Your video is being sent...");
+      const formData = new FormData();
+      formData.append("userId", userId);
+      formData.append("video", videoBlob, "video.webm");
 
-       const response = await fetch("/api/webhook/send-video", {
-         method: "POST",
-         body: formData,
-       });
+      const response = await fetch("/api/webhook/send-video", {
+        method: "POST",
+        body: formData,
+      });
 
-       if (response.ok) {
-         setStatus("Thank you for sending the video!");
-         // Stop camera and clean up
-         if (stream) {
-           stream.getTracks().forEach((track) => track.stop());
-         }
-         setCameraStarted(false);
-         setStream(null);
-       } else {
-         setStatus("Failed to send video message");
-       }
-     } catch (error) {
-       setStatus("Error sending video message");
-       console.error(error);
-     }
-   };
+      if (response.ok) {
+        setStatus("Thank you for sending the video!");
+        // Stop camera and clean up
+        if (stream) {
+          stream.getTracks().forEach((track) => track.stop());
+        }
+        setCameraStarted(false);
+        setStream(null);
+      } else {
+        setStatus("Failed to send video message");
+      }
+    } catch (error) {
+      setStatus("Error sending video message");
+      console.error(error);
+    }
+  };
 
   useEffect(() => {
     // Parse userId from URL query params
@@ -120,7 +121,14 @@ const sendVideoMessage = async () => {
       {userId ? (
         <>
           <p>User ID: {userId}</p>
-          <button onClick={sendVideoMessage} disabled={!videoBlob || recording}>
+          <button
+            onClick={sendVideoMessage}
+            disabled={
+              !videoBlob ||
+              recording ||
+              status === "Your video is being sent..."
+            }
+          >
             Send Video Message
           </button>
           <p>{status}</p>
