@@ -69,35 +69,41 @@ function App() {
     }
   };
 
-  const sendVideoMessage = async () => {
-    if (!userId) {
-      setStatus("User ID not found");
-      return;
-    }
-    if (!videoBlob) {
-      setStatus("No video recorded");
-      return;
-    }
-    try {
-      const formData = new FormData();
-      formData.append("userId", userId);
-      formData.append("video", videoBlob, "video.webm");
+const sendVideoMessage = async () => {
+     if (!userId) {
+       setStatus("User ID not found");
+       return;
+     }
+     if (!videoBlob) {
+       setStatus("No video recorded");
+       return;
+     }
+     try {
+       const formData = new FormData();
+       formData.append("userId", userId);
+       formData.append("video", videoBlob, "video.webm");
 
-      const response = await fetch("/api/webhook/send-video", {
-        method: "POST",
-        body: formData,
-      });
+       const response = await fetch("/api/webhook/send-video", {
+         method: "POST",
+         body: formData,
+       });
 
-      if (response.ok) {
-        setStatus("Video message sent!");
-      } else {
-        setStatus("Failed to send video message");
-      }
-    } catch (error) {
-      setStatus("Error sending video message");
-      console.error(error);
-    }
-  };
+       if (response.ok) {
+         setStatus("Thank you for sending the video!");
+         // Stop camera and clean up
+         if (stream) {
+           stream.getTracks().forEach((track) => track.stop());
+         }
+         setCameraStarted(false);
+         setStream(null);
+       } else {
+         setStatus("Failed to send video message");
+       }
+     } catch (error) {
+       setStatus("Error sending video message");
+       console.error(error);
+     }
+   };
 
   useEffect(() => {
     // Parse userId from URL query params
