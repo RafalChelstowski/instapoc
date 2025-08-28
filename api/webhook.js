@@ -6,7 +6,7 @@ const ACCESS_TOKEN = process.env.ACCESS_TOKEN;
 const VERIFY_TOKEN = process.env.VERIFY_TOKEN;
 const IG_BUSINESS_ID = process.env.IG_BUSINESS_ID;
 
-const TEST_VIDEO_URL = "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4";
+const TEST_VIDEO_URL = "https://instapoc-lyart.vercel.app/sample.mp4";
 
 module.exports = async (req, res) => {
   if (req.method === "GET") {
